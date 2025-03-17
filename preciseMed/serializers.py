@@ -21,6 +21,11 @@ class AddPatientSerializer(serializers.Serializer):
     hasInsurance = serializers.BooleanField(default=False)
     previousConditions = serializers.CharField(allow_null=True, allow_blank=True,)
 
+class AddBookingSerializer(serializers.Serializer):
+    requestDescription = serializers.CharField()
+    date = serializers.DateField()
+    time = serializers.TimeField()
+
 
 class DoctorUpdateSerializer(serializers.Serializer):
     username = serializers.CharField()

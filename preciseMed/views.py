@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.models import TokenUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from datetime import timedelta
+from datetime import timedelta, datetime, date, time
 from django.utils import timezone
 import torch
 from PIL import Image
@@ -22,7 +22,7 @@ import torch.nn as nn
 from .models import CustomUser, UserRelationship, Booking, Patient, Doctor
 from .permissions import MedicPermission, PatientPermission, GuestPermission
 from .serializers import AddPatientSerializer, PatientSerializer, DoctorUpdateSerializer, DoctorSerializer, \
-    PatientUpdateSerializer, BookingSerializer, DoctorBookingSerializer
+    PatientUpdateSerializer, BookingSerializer, DoctorBookingSerializer, AddBookingSerializer
 
 # Create your views here.
 User = get_user_model()
@@ -163,6 +163,20 @@ class PatientStatusView(APIView):
             'all': bookings_data
         })
 
+
+@permission_classes([IsAuthenticated])
+class PatientCreateBookingView(APIView):
+    def post(self, request):
+        authenticated_user: CustomUser = request.user
+        serializer = AddBookingSerializer(data=request.data)
+        if serializer.is_valid():
+            if 'PATIENT' in authenticated_user.groups.values_list('name', flat=True):
+                relationship = UserRelationship.objects.get(patient=request.user)
+                patient = Patient.objects.filter(id=authenticated_user.id).first()
+                booking = Booking.objects.create(patient=patient, requestDescription=serializer.data['requestDescription'],
+                                                 timestamp=datetime.combine(date.fromisoformat(serializer.data['date']), time.fromisoformat(serializer.data['time'])))
+                booking.save()
+                return Response({"success": True})
 
 @permission_classes([IsAuthenticated])
 class PatientBookingView(APIView):
